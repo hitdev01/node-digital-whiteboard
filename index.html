@@ -4,13 +4,15 @@
   </head>
   <body>
     <div style="clear:both;">
-      <canvas id="canvas" width="500" height="500"></canvas>
+      <canvas id="canvas" width="700" height="900"></canvas>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/color/jquery.color-2.1.2.min.js" integrity="sha256-H28SdxWrZ387Ldn0qogCzFiUDDxfPiNIyJX7BECQkDE=" crossorigin="anonymous"></script>
     <script src="fabric.min.js"></script>
     <script>
       $(document).ready(function(){
+        var push = false;
+
         var host = location.origin.replace(/^http/, 'ws');
         var ws = new WebSocket(host);
         ws.onmessage = function (event) {
@@ -31,9 +33,17 @@
         canvas.renderAll();
         canvas.calcOffset();
 
+        canvas.on('mouse:down', function(e) {
+          push = true;
+        });
         canvas.on('mouse:up', function(e) {
-          var canvasdata = JSON.stringify(canvas);
-          ws.send(canvasdata);
+          push = false;
+        });
+        canvas.on('mouse:move', function(e) {
+          if (push) {
+            var canvasdata = JSON.stringify(canvas);
+            ws.send(canvasdata);
+          }
         });
 
       });
