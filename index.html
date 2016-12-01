@@ -4,7 +4,10 @@
   </head>
   <body>
     <div style="clear:both;">
-      <canvas id="canvas" width="700" height="900"></canvas>
+      <canvas id="canvas" width="2000" height="500"></canvas>
+      <button id="freedraw" class="btn btn-info">お絵かきモード</button>
+      <button id="delete">選択したオブジェクトを削除</button>
+      <input type="color" id="colorpicker"></input>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/color/jquery.color-2.1.2.min.js" integrity="sha256-H28SdxWrZ387Ldn0qogCzFiUDDxfPiNIyJX7BECQkDE=" crossorigin="anonymous"></script>
@@ -25,16 +28,58 @@
         */
         // canvasを取得
         var canvas = new fabric.Canvas('canvas');
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingColor = "red";
-        canvas.freeDrawingLineWidth = 5;
+        // canvas.isDrawingMode = true;
+        canvas.freeDrawingCursor = "pointer";
+        canvas.freeDrawingBrush.color = '#000000';
+        canvas.freeDrawingBrush.width = 5;
         canvas.renderAll();
         canvas.calcOffset();
 
         canvas.on('mouse:up', function(e) {
-          var canvasdata = JSON.stringify(canvas);
-          ws.send(canvasdata);
+          if (canvas.isDrawingMode) {
+            var canvasdata = JSON.stringify(canvas);
+            ws.send(canvasdata);
+          }
         });
+
+        $('#freedraw').on('click', function(e) {
+          e.target.innerHTML = canvas.isDrawingMode ? 'お絵かきモード' : '選択モード';
+          canvas.isDrawingMode = !canvas.isDrawingMode;
+        });
+
+        $('#colorpicker').on('change', function(e) {
+          console.log(e.target.value);
+          canvas.freeDrawingBrush.color = e.target.value;
+        });
+
+        $("#delete").on('click', function(e){
+            canvas.isDrawingMode = false;
+            deleteObjects();
+        });
+
+        // select all objects
+        function deleteObjects() {
+        	var activeObject = canvas.getActiveObject(),
+            activeGroup = canvas.getActiveGroup();
+            if (activeObject) {
+                if (confirm('本当に消す？')) {
+                    canvas.remove(activeObject);
+                    var canvasdata = JSON.stringify(canvas);
+                    ws.send(canvasdata);
+                }
+            }
+            else if (activeGroup) {
+                if (confirm('本当に消す？')) {
+                    var objectsInGroup = activeGroup.getObjects();
+                    canvas.discardActiveGroup();
+                    objectsInGroup.forEach(function(object) {
+                    canvas.remove(object);
+                    var canvasdata = JSON.stringify(canvas);
+                    ws.send(canvasdata);
+                    });
+                }
+            }
+        }
 
       });
     </script>
