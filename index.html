@@ -11,8 +11,6 @@
     <script src="fabric.min.js"></script>
     <script>
       $(document).ready(function(){
-        var push = false;
-
         var host = location.origin.replace(/^http/, 'ws');
         var ws = new WebSocket(host);
         ws.onmessage = function (event) {
@@ -33,17 +31,9 @@
         canvas.renderAll();
         canvas.calcOffset();
 
-        canvas.on('mouse:down', function(e) {
-          push = true;
-        });
         canvas.on('mouse:up', function(e) {
-          push = false;
-        });
-        canvas.on('mouse:move', function(e) {
-          if (push) {
-            var canvasdata = JSON.stringify(canvas);
-            ws.send(canvasdata);
-          }
+          var canvasdata = JSON.stringify(canvas);
+          ws.send(canvasdata);
         });
 
       });
