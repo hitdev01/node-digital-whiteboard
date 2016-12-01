@@ -6,7 +6,7 @@
     <div style="clear:both;">
       <canvas id="canvas" width="2000" height="500"></canvas>
       <button id="freedraw" class="btn btn-info">お絵かきモード</button>
-      <button id="delete">選択したオブジェクトを削除</button>
+      <button id="delete">削除モード</button>
       <input type="color" id="colorpicker"></input>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
@@ -14,6 +14,7 @@
     <script src="fabric.min.js"></script>
     <script>
       $(document).ready(function(){
+        var deletemode = false;
         var host = location.origin.replace(/^http/, 'ws');
         var ws = new WebSocket(host);
         ws.onmessage = function (event) {
@@ -36,14 +37,25 @@
         canvas.calcOffset();
 
         canvas.on('mouse:up', function(e) {
-          if (canvas.isDrawingMode) {
+          if (!deletemode) {
             var canvasdata = JSON.stringify(canvas);
             ws.send(canvasdata);
+          } else {
+            deleteObjects();
           }
         });
 
         $('#freedraw').on('click', function(e) {
-          e.target.innerHTML = canvas.isDrawingMode ? 'お絵かきモード' : '選択モード';
+          if (canvas.isDrawingMode) {
+            e.target.innerHTML = 'お絵かきモード';
+            $('#delete').prop('disabled', false);
+          } else {
+            e.target.innerHTML = '選択モード';
+            $('#delete').prop('disabled', true);
+            deletemode = false;
+            $('#delete').text('削除モード');
+            canvas.freeDrawingCursor = 'pointer';
+          }
           canvas.isDrawingMode = !canvas.isDrawingMode;
         });
 
@@ -52,9 +64,10 @@
           canvas.freeDrawingBrush.color = e.target.value;
         });
 
-        $("#delete").on('click', function(e){
-            canvas.isDrawingMode = false;
-            deleteObjects();
+        $('#delete').on('click', function(e) {
+          e.target.innerHTML = deletemode ? '削除モード' : '選択したオブジェクトを削除';
+          canvas.freeDrawingCursor = deletemode ? 'crosshair': 'pointer';
+          deletemode = !deletemode;
         });
 
         // select all objects
